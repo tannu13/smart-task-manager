@@ -31,7 +31,6 @@ app.get("/health", async (req, res) => {
 
   res.status(dbIsHealthy ? 200 : 503).json({
     uptime: process.uptime(),
-    timestamp: Date.now(),
     status: dbIsHealthy ? "OK" : "FAILURE",
   });
 });

@@ -6,15 +6,8 @@ export const CreateTaskSchema = z.object({
   title: z.string().trim().min(1).max(255),
 });
 export const createTaskController = async (req: Request, res: Response) => {
-  // the body is validated via the CreateTaskSchema
-  try {
-    const newTask = await createTaskService(req.body.title);
-    return res.status(201).json({
-      data: { task: newTask },
-    });
-  } catch (err) {
-    return res.status(500).json({
-      error: { code: "INTERNAL", message: "Internal server error" },
-    });
-  }
+  const newTask = await createTaskService(req.body.title);
+  return res.status(201).json({
+    data: { task: newTask },
+  });
 };

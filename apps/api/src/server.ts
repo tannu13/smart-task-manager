@@ -5,6 +5,7 @@ import cors from "cors";
 import { pool } from "./db/connection.ts";
 import healthRouter from "./routes/health.routes.ts";
 import tasksRouter from "./routes/tasks.routes.ts";
+import { errorHandler } from "./middleware/error.middleware.ts";
 
 const app = express();
 
@@ -29,20 +30,7 @@ app.use((req, res) => {
   });
 });
 
-app.use(
-  (
-    err: Error,
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction,
-  ) => {
-    console.error(err);
-    res.status(500).json({
-      error: "Something went wrong!",
-      ...(isDevelopment && { details: err.message }),
-    });
-  },
-);
+app.use(errorHandler);
 
 export { app };
 export default app;

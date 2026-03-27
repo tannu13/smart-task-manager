@@ -5,7 +5,7 @@ import { createTaskService } from "../services/tasks.service";
 export const CreateTaskSchema = z.object({
   title: z.string().trim().min(1).max(255),
 });
-export const createTasksController = async (req: Request, res: Response) => {
+export const createTaskController = async (req: Request, res: Response) => {
   // the body is validated via the CreateTaskSchema
   try {
     const newTask = await createTaskService(req.body.title);

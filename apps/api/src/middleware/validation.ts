@@ -4,7 +4,8 @@ import z, { ZodObject, ZodError } from "zod";
 export const validateBody = (schema: ZodObject) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      schema.parse(req.body);
+      const parsedData = schema.parse(req.body);
+      req.body = parsedData;
       next();
     } catch (err) {
       if (err instanceof ZodError) {

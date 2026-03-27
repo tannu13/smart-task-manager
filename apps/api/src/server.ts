@@ -4,6 +4,7 @@ import env, { isDevelopment } from "../env.ts";
 import cors from "cors";
 import { pool } from "./db/connection.ts";
 import healthRouter from "./routes/health.routes.ts";
+import tasksRouter from "./routes/tasks.routes.ts";
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/health", healthRouter);
+app.use("/tasks", tasksRouter);
 
 // 404 handler
 app.use((req, res) => {

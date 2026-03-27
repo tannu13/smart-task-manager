@@ -2,6 +2,7 @@ import express from "express";
 import helmet from "helmet";
 import env, { isDevelopment } from "../env.ts";
 import cors from "cors";
+import { pool } from "./db/connection.ts";
 
 const app = express();
 
@@ -15,7 +16,25 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// route handlers go here
+app.get("/health", async (req, res) => {
+  let dbIsHealthy = false;
+
+  try {
+    await pool.query("SELECT 1");
+    dbIsHealthy = true;
+  } catch (err) {
+    console.error(
+      "DB Health Check Failed:",
+      err instanceof Error ? err.message : err,
+    );
+  }
+
+  res.status(dbIsHealthy ? 200 : 503).json({
+    uptime: process.uptime(),
+    timestamp: Date.now(),
+    status: dbIsHealthy ? "OK" : "FAILURE",
+  });
+});
 
 // 404 handler
 app.use((req, res) => {

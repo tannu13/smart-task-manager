@@ -12,3 +12,6 @@ export const tasks = pgTable("tasks", {
   isCompleted: boolean("is_completed").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+// type export
+export type Task = typeof tasks.$inferSelect;

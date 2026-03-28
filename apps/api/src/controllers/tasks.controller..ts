@@ -1,8 +1,12 @@
 import { Request, Response } from "express";
 import z from "zod";
 import {
+  buildFallbackSummary,
+  buildTasksSummaryPrompt,
   createTaskService,
   deleteTaskService,
+  generateTaskSummaryWithOpenAI,
+  getPendingTasksService,
   getTasksService,
 } from "../services/tasks.service";
 
@@ -32,4 +36,38 @@ export const deleteTaskController = async (req: Request, res: Response) => {
   const taskId = req.params.id as string;
   await deleteTaskService(taskId);
   return res.sendStatus(204);
+};
+
+export const getTasksSummaryController = async (
+  req: Request,
+  res: Response,
+) => {
+  const pendingTasks = await getPendingTasksService();
+  if (!pendingTasks || pendingTasks.length === 0) {
+    return res.status(200).json({
+      data: {
+        summary: "You have no pending tasks.",
+      },
+    });
+  }
+
+  const prompt = buildTasksSummaryPrompt(pendingTasks);
+  let summary = "";
+  let isFallbackSummary = false;
+
+  try {
+    summary = await generateTaskSummaryWithOpenAI(prompt);
+  } catch (err) {
+    summary = buildFallbackSummary(pendingTasks);
+    isFallbackSummary = true;
+  }
+
+  return res.status(200).json({
+    data: {
+      summary,
+    },
+    ...(isFallbackSummary && {
+      meta: { source: "fallback" },
+    }),
+  });
 };

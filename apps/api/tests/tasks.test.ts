@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import app from "../src/server";
+import db from "../src/db/connection";
+import { tasks } from "../src/db/schema";
 
 describe("POST /tasks", () => {
   it("should create & return a new task and 201 status", async () => {
@@ -45,5 +47,37 @@ describe("POST /tasks", () => {
       isCompleted: false,
       createdAt: expect.any(String),
     });
+  });
+});
+
+describe("GET /tasks", () => {
+  beforeEach(async () => {
+    await db.delete(tasks);
+  });
+  it("should return empty array when no tasks exist", async () => {
+    const response = await request(app).get("/tasks");
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      data: { tasks: [] },
+    });
+  });
+  it("should return the created 2 tasks", async () => {
+    await db.insert(tasks).values([{ title: "Task 1" }, { title: "Task 2" }]);
+    const response = await request(app).get("/tasks");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.tasks).toHaveLength(2);
+  });
+  it("should return the newest first", async () => {
+    await db.insert(tasks).values([{ title: "Task 1" }]);
+    await db.insert(tasks).values([{ title: "Task 2" }]);
+    const response = await request(app).get("/tasks");
+
+    const firstTask = response.body.data.tasks[0];
+    const secondTask = response.body.data.tasks[1];
+
+    expect(response.status).toBe(200);
+    expect(firstTask.title).toBe("Task 2");
+    expect(secondTask.title).toBe("Task 1");
   });
 });

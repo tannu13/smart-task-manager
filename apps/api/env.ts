@@ -1,10 +1,11 @@
-import "dotenv/config";
+import * as dotenv from "dotenv";
+import path from "node:path";
 import z from "zod";
 
-process.env.APP_STAGE = process.env.APP_STAGE || "dev";
+const nodeEnv = process.env.NODE_ENV || "development";
+const envFile = nodeEnv === "test" ? ".env.test" : ".env";
 
-// const isDev = process.env.APP_STAGE === "dev";
-// const isProd = process.env.APP_STAGE === "prod";
+dotenv.config({ path: path.resolve(process.cwd(), envFile), override: true });
 
 const envSchema = z.object({
   NODE_ENV: z

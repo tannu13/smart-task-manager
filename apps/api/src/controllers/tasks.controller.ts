@@ -5,7 +5,7 @@ import {
   buildTasksSummaryPrompt,
   createTaskService,
   deleteTaskService,
-  generateTaskSummaryWithOpenAI,
+  generateTaskSummaryWithAI,
   getPendingTasksService,
   getTasksService,
 } from "../services/tasks.service";
@@ -43,7 +43,7 @@ export const getTasksSummaryController = async (
   res: Response,
 ) => {
   const pendingTasks = await getPendingTasksService();
-  if (!pendingTasks || pendingTasks.length === 0) {
+  if (pendingTasks.length === 0) {
     return res.status(200).json({
       data: {
         summary: "You have no pending tasks.",
@@ -56,7 +56,7 @@ export const getTasksSummaryController = async (
   let isFallbackSummary = false;
 
   try {
-    summary = await generateTaskSummaryWithOpenAI(prompt);
+    summary = await generateTaskSummaryWithAI(prompt);
   } catch (err) {
     summary = buildFallbackSummary(pendingTasks);
     isFallbackSummary = true;
@@ -66,8 +66,6 @@ export const getTasksSummaryController = async (
     data: {
       summary,
     },
-    ...(isFallbackSummary && {
-      meta: { source: "fallback" },
-    }),
+    meta: { source: isFallbackSummary ? "fallback" : "ai" },
   });
 };

@@ -23,6 +23,7 @@ const envSchema = z.object({
     })
     .default([]),
   DATABASE_URL: z.string().startsWith("postgresql://"),
+  GOOGLE_GENERATIVE_AI_API_KEY: z.string(),
 });
 
 type Env = z.infer<typeof envSchema>;

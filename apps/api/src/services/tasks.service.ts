@@ -1,7 +1,8 @@
-import { desc, eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import db from "../db/connection";
 import { Task, tasks } from "../db/schema";
 import { AppError } from "../utils/app-error";
+import { AIService } from "./ai.service";
 
 export const createTaskService = async (title: string) => {
   const [newTask] = await db.insert(tasks).values({ title }).returning();
@@ -17,7 +18,7 @@ export const getPendingTasksService = async () => {
     .select()
     .from(tasks)
     .where(eq(tasks.isCompleted, false))
-    .orderBy(desc(tasks.createdAt));
+    .orderBy(asc(tasks.createdAt));
 };
 
 export const buildTasksSummaryPrompt = (tasks: Task[]) => {
@@ -34,8 +35,9 @@ Based on these, write a short daily briefing:
 - Tone: Be clear, actionable, and encouraging.`;
 };
 
-export const generateTaskSummaryWithOpenAI = async (prompt: string) => {
-  return "";
+export const generateTaskSummaryWithAI = async (prompt: string) => {
+  const aiService = new AIService();
+  return await aiService.generateSummary(prompt);
 };
 export const buildFallbackSummary = (tasks: Task[]): string => {
   if (tasks.length === 0) {

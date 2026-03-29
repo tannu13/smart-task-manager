@@ -1,9 +1,13 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import app from "../src/server";
 import db from "../src/db/connection";
-import { tasks } from "../src/db/schema";
+import { Task, tasks } from "../src/db/schema";
 import { eq } from "drizzle-orm";
+import {
+  buildFallbackSummary,
+  getSummaryWithFallback,
+} from "../src/services/tasks.service";
 
 describe("POST /tasks", () => {
   it("should create & return a new task and 201 status", async () => {
@@ -121,5 +125,68 @@ describe("DELETE /tasks/:id", () => {
       where: eq(tasks.id, newTask.id),
     });
     expect(result).toBeUndefined();
+  });
+});
+
+describe("GET /tasks/summary", () => {
+  beforeEach(async () => {
+    await db.delete(tasks);
+  });
+
+  it("should return the pendingTasksCount as zero when there are no pending tasks", async () => {
+    const resposne = await request(app).get("/tasks/summary");
+
+    expect(resposne.body.data.pendingTasksCount).toBe(0);
+  });
+});
+
+describe("getSummaryWithFallback", () => {
+  const mockTasks: Task[] = [
+    {
+      id: "1",
+      title: "Finish backend tests",
+      isCompleted: false,
+      createdAt: new Date(),
+    },
+    {
+      id: "2",
+      title: "Review API errors",
+      isCompleted: false,
+      createdAt: new Date(),
+    },
+  ];
+
+  it("returns AI summary when AI succeeds", async () => {
+    const mockAIService = {
+      generateSummary: vi.fn().mockResolvedValue("Success summary message"),
+    };
+
+    const result = await getSummaryWithFallback(
+      mockTasks,
+      mockAIService as any,
+    );
+
+    expect(mockAIService.generateSummary).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({
+      summary: "Success summary message",
+      source: "ai",
+    });
+  });
+
+  it("returns fallback summary when AI throws", async () => {
+    const mockAIService = {
+      generateSummary: vi.fn().mockRejectedValue(new Error("AI failed")),
+    };
+
+    const result = await getSummaryWithFallback(
+      mockTasks,
+      mockAIService as any,
+    );
+
+    expect(mockAIService.generateSummary).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({
+      summary: buildFallbackSummary(mockTasks),
+      source: "fallback",
+    });
   });
 });

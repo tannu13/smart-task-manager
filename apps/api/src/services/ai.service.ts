@@ -1,4 +1,3 @@
-// src/services/ai.service.ts
 import { generateText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import env from "../../env";

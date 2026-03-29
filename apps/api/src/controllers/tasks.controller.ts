@@ -1,12 +1,10 @@
 import { Request, Response } from "express";
 import z from "zod";
 import {
-  buildFallbackSummary,
-  buildTasksSummaryPrompt,
   createTaskService,
   deleteTaskService,
-  generateTaskSummaryWithAI,
   getPendingTasksService,
+  getSummaryWithFallback,
   getTasksService,
 } from "../services/tasks.service";
 
@@ -47,25 +45,18 @@ export const getTasksSummaryController = async (
     return res.status(200).json({
       data: {
         summary: "You have no pending tasks.",
+        pendingTasksCount: 0,
       },
     });
   }
 
-  const prompt = buildTasksSummaryPrompt(pendingTasks);
-  let summary = "";
-  let isFallbackSummary = false;
-
-  try {
-    summary = await generateTaskSummaryWithAI(prompt);
-  } catch (err) {
-    summary = buildFallbackSummary(pendingTasks);
-    isFallbackSummary = true;
-  }
+  const result = await getSummaryWithFallback(pendingTasks);
 
   return res.status(200).json({
     data: {
-      summary,
+      summary: result.summary,
+      pendingTasksCount: pendingTasks.length,
     },
-    meta: { source: isFallbackSummary ? "fallback" : "ai" },
+    meta: { source: result.source },
   });
 };

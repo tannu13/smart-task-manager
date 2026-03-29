@@ -35,10 +35,29 @@ Based on these, write a short daily briefing:
 - Tone: Be clear, actionable, and encouraging.`;
 };
 
-export const generateTaskSummaryWithAI = async (prompt: string) => {
-  const aiService = new AIService();
+export const generateTaskSummaryWithAI = async (
+  prompt: string,
+  aiService = new AIService(),
+) => {
   return await aiService.generateSummary(prompt);
 };
+
+export const getSummaryWithFallback = async (
+  tasks: Task[],
+  aiService?: AIService,
+) => {
+  try {
+    const prompt = buildTasksSummaryPrompt(tasks);
+    const summary = await generateTaskSummaryWithAI(prompt, aiService);
+    return { summary, source: "ai" as const };
+  } catch (err) {
+    return {
+      summary: buildFallbackSummary(tasks),
+      source: "fallback" as const,
+    };
+  }
+};
+
 export const buildFallbackSummary = (tasks: Task[]): string => {
   if (tasks.length === 0) {
     return "Your task list is currently empty. Enjoy the headspace!";

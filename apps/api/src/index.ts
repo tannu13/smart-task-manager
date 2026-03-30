@@ -1,4 +1,4 @@
-import env from "../env.ts";
+import env from "./env.ts";
 import { pool } from "./db/connection.ts";
 import app from "./server.ts";
 

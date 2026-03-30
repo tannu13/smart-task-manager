@@ -1,6 +1,6 @@
 import { generateText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import env from "../../env";
+import env from "../env";
 
 export class AIService {
   private model;

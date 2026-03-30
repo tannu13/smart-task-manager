@@ -1,14 +1,16 @@
 {
   "compilerOptions": {
-    "noEmit": true,
-    "target": "esnext",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "allowImportingTsExtensions": true,
+    "noEmit": false,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowImportingTsExtensions": false,
     "rewriteRelativeImportExtensions": true,
-    "strict": true, // Always recommended for new projects!
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "tests/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts"],
+  "exclude": ["node_modules", "tests"]
 }

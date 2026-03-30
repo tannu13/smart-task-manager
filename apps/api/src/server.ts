@@ -1,8 +1,7 @@
 import express from "express";
 import helmet from "helmet";
-import env, { isDevelopment } from "../env.ts";
+import env from "./env.ts";
 import cors from "cors";
-import { pool } from "./db/connection.ts";
 import healthRouter from "./routes/health.routes.ts";
 import tasksRouter from "./routes/tasks.routes.ts";
 import { errorHandler } from "./middleware/error.middleware.ts";

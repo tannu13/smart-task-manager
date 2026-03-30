@@ -1,3 +1,5 @@
+import { Button } from "@/components/Button";
+import { Pill } from "@/components/Pill";
 import { useTasksSummaryQuery } from "../hooks";
 import { getErrorMessage } from "../utils";
 
@@ -27,24 +29,23 @@ export const SummaryPanel = () => {
             </h2>
           </div>
 
-          <span className="rounded-full border border-(--line) bg-white/80 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-(--muted)">
+          <Pill variant="neutral" className="py-2">
             {sourceLabel}
-          </span>
+          </Pill>
         </div>
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
+          <Button
+            size="lg"
             onClick={() => void summaryQuery.refetch()}
             disabled={isGenerating}
-            className="inline-flex items-center justify-center rounded-full bg-(--ink) px-5 py-3 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isGenerating
               ? "Generating briefing..."
               : hasSummary
                 ? "Generate again"
                 : "Generate Briefing"}
-          </button>
+          </Button>
         </div>
 
         {isGenerating && !hasSummary ? (

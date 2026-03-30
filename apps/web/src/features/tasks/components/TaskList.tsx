@@ -1,23 +1,151 @@
+import { useEffect, useRef, useState } from "react";
 import { ApiClientError } from "@/lib/api-client";
-import { useState } from "react";
+import { Button } from "@/components/Button";
+import { Pill } from "@/components/Pill";
 import { useDeleteTaskMutation, useTasksQuery } from "../hooks";
+import type { Task } from "../types";
 import { formatTaskDate, getErrorMessage } from "../utils";
 
 const loadingSkeleton = Array.from({ length: 3 }, (_, index) => index);
+const focusableSelector =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+type TaskItemProps = {
+  isDeleting: boolean;
+  onDeleteClick: () => void;
+  task: Task;
+};
+
+const TaskItem = ({ isDeleting, onDeleteClick, task }: TaskItemProps) => {
+  return (
+    <li className="rounded-3xl border border-black/5 bg-white/80 p-5 shadow-sm">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            {!task.isCompleted ? (
+              <Pill variant="accent">
+                Pending
+              </Pill>
+            ) : (
+              <Pill variant="success">
+                Completed
+              </Pill>
+            )}
+            <span className="text-xs uppercase tracking-[0.18em] text-(--muted)">
+              {formatTaskDate(task.createdAt)}
+            </span>
+          </div>
+          <p className="mt-3 text-lg font-semibold leading-7 text-(--ink)">
+            {task.title}
+          </p>
+        </div>
+
+        <Button
+          variant="dangerOutline"
+          disabled={isDeleting}
+          onClick={onDeleteClick}
+          className="shrink-0"
+        >
+          {isDeleting ? "Removing..." : "Delete"}
+        </Button>
+      </div>
+    </li>
+  );
+};
 
 export const TaskList = () => {
   const tasksQuery = useTasksQuery();
   const deleteTaskMutation = useDeleteTaskMutation();
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [taskPendingDeletion, setTaskPendingDeletion] = useState<Task | null>(
+    null,
+  );
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
 
-  const handleDelete = async (taskId: string) => {
+  useEffect(() => {
+    if (!taskPendingDeletion) {
+      return;
+    }
+
+    previousActiveElementRef.current = document.activeElement as HTMLElement | null;
+
+    const dialog = dialogRef.current;
+    if (!dialog) {
+      return;
+    }
+
+    const getFocusableElements = () =>
+      Array.from(
+        dialog.querySelectorAll<HTMLElement>(focusableSelector),
+      ).filter((element) => {
+        return !element.hasAttribute("disabled");
+      });
+
+    const focusableElements = getFocusableElements();
+    focusableElements[0]?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !deleteTaskMutation.isPending) {
+        event.preventDefault();
+        setTaskPendingDeletion(null);
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const currentFocusableElements = getFocusableElements();
+      if (currentFocusableElements.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const firstElement = currentFocusableElements[0];
+      const lastElement =
+        currentFocusableElements[currentFocusableElements.length - 1];
+      const activeElement = document.activeElement as HTMLElement | null;
+
+      if (!activeElement || !dialog.contains(activeElement)) {
+        event.preventDefault();
+        if (event.shiftKey) {
+          lastElement?.focus();
+        } else {
+          firstElement?.focus();
+        }
+        return;
+      }
+
+      if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement?.focus();
+        return;
+      }
+
+      if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement?.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previousActiveElementRef.current?.focus();
+    };
+  }, [deleteTaskMutation.isPending, taskPendingDeletion]);
+
+  const handleDelete = async () => {
+    if (!taskPendingDeletion) {
+      return;
+    }
+
     try {
-      setPendingDeleteId(taskId);
-      await deleteTaskMutation.mutateAsync(taskId);
+      await deleteTaskMutation.mutateAsync(taskPendingDeletion.id);
+      setTaskPendingDeletion(null);
     } catch {
       // The mutation error state is rendered below the list header.
-    } finally {
-      setPendingDeleteId(null);
     }
   };
 
@@ -32,10 +160,13 @@ export const TaskList = () => {
             Pending work from newest to oldest.
           </h2>
         </div>
-        <span className="rounded-full border border-(--line) bg-white/80 px-3 py-2 text-sm text-(--muted)">
+        <Pill
+          variant="neutral"
+          className="px-3 py-2 text-sm normal-case tracking-normal font-normal"
+        >
           {tasksQuery.data?.length ?? 0} item
           {tasksQuery.data?.length === 1 ? "" : "s"}
-        </span>
+        </Pill>
       </div>
 
       {deleteTaskMutation.error instanceof ApiClientError ? (
@@ -66,13 +197,13 @@ export const TaskList = () => {
           <p className="text-sm font-medium text-(--danger-strong)">
             {getErrorMessage(tasksQuery.error)}
           </p>
-          <button
-            type="button"
+          <Button
+            variant="danger"
             onClick={() => tasksQuery.refetch()}
-            className="mt-4 inline-flex rounded-full bg-(--danger-strong) px-4 py-2 text-sm font-semibold text-white"
+            className="mt-4"
           >
             Retry tasks
-          </button>
+          </Button>
         </div>
       ) : null}
 
@@ -94,47 +225,70 @@ export const TaskList = () => {
         <ul className="mt-6 space-y-4">
           {tasksQuery.data.map((task) => {
             const isDeleting =
-              pendingDeleteId === task.id && deleteTaskMutation.isPending;
+              deleteTaskMutation.isPending &&
+              deleteTaskMutation.variables === task.id;
 
             return (
-              <li
+              <TaskItem
                 key={task.id}
-                className="rounded-3xl border border-black/5 bg-white/80 p-5 shadow-sm"
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {!task.isCompleted ? (
-                        <span className="rounded-full bg-(--accent-soft) px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-(--accent-strong)">
-                          Pending
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-green-800">
-                          Completed
-                        </span>
-                      )}
-                      <span className="text-xs uppercase tracking-[0.18em] text-(--muted)">
-                        {formatTaskDate(task.createdAt)}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-lg font-semibold leading-7 text-(--ink)">
-                      {task.title}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    disabled={isDeleting}
-                    onClick={() => void handleDelete(task.id)}
-                    className="inline-flex shrink-0 items-center justify-center rounded-full border border-black/10 px-4 py-2 text-sm font-semibold text-(--ink) transition hover:border-(--danger-strong) hover:text-(--danger-strong) disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isDeleting ? "Removing..." : "Delete"}
-                  </button>
-                </div>
-              </li>
+                task={task}
+                isDeleting={isDeleting}
+                onDeleteClick={() => setTaskPendingDeletion(task)}
+              />
             );
           })}
         </ul>
+      ) : null}
+
+      {taskPendingDeletion ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-task-title"
+            aria-describedby="delete-task-description"
+            className="w-full max-w-md rounded-3xl border border-black/10 bg-(--surface) p-6 shadow-2xl"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-(--muted)">
+              Confirm deletion
+            </p>
+            <h3
+              id="delete-task-title"
+              className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-(--ink)"
+            >
+              Delete this task?
+            </h3>
+            <p
+              id="delete-task-description"
+              className="mt-3 text-sm leading-7 text-(--muted)"
+            >
+              This will permanently remove{" "}
+              <span className="font-semibold text-(--ink)">
+                {taskPendingDeletion.title}
+              </span>{" "}
+              from the list.
+            </p>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button
+                variant="secondary"
+                onClick={() => setTaskPendingDeletion(null)}
+                disabled={deleteTaskMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="lg"
+                onClick={() => void handleDelete()}
+                disabled={deleteTaskMutation.isPending}
+              >
+                {deleteTaskMutation.isPending ? "Removing..." : "Delete task"}
+              </Button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </section>
   );

@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { ApiClientError } from "@/lib/api-client";
+import { Button } from "@/components/Button";
 import { useCreateTaskMutation } from "../hooks";
 
 const TITLE_MAX_LENGTH = 255;
@@ -119,13 +120,14 @@ export const CreateTaskForm = () => {
           The task list updates immediately. Generate the briefing only when you
           want a fresh summary.
         </p>
-        <button
+        <Button
           type="submit"
           disabled={createTaskMutation.isPending}
-          className="inline-flex items-center justify-center rounded-full bg-(--ink) px-5 py-3 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 basis-4/12"
+          size="lg"
+          className="basis-4/12"
         >
           {createTaskMutation.isPending ? "Adding task..." : "Add task"}
-        </button>
+        </Button>
       </div>
     </form>
   );

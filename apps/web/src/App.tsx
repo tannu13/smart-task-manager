@@ -1,3 +1,4 @@
+import { Pill } from "@/components/Pill";
 import { SummaryPanel } from "@/features/tasks/components/SummaryPanel";
 import { TaskWorkspace } from "@/features/tasks/components/TaskWorkspace";
 
@@ -10,9 +11,9 @@ function App() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(15,118,110,0.18),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(180,83,9,0.14),transparent_32%)]" />
             <div className="relative grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
               <div>
-                <span className="inline-flex rounded-full border border-(--line) bg-white/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-(--muted)">
+                <Pill variant="subtle" className="tracking-[0.24em]">
                   Smart Task Manager
-                </span>
+                </Pill>
                 <h1 className="mt-4 max-w-3xl font-['Iowan_Old_Style','Palatino_Linotype','Book_Antiqua',Georgia,serif] text-4xl leading-none tracking-[-0.04em] text-(--ink) sm:text-5xl lg:text-6xl">
                   Stay on the task. Let the briefing keep up.
                 </h1>
@@ -30,27 +31,27 @@ function App() {
                 <ul className="mt-4 grid gap-3 text-sm text-(--ink)">
                   <li className="flex items-center justify-between rounded-2xl border border-black/5 bg-white/80 px-4 py-3">
                     <span>Create task</span>
-                    <span className="rounded-full bg-(--accent-soft) px-2 py-1 text-xs font-medium text-(--accent-strong)">
+                    <Pill variant="accent" size="sm">
                       POST /tasks
-                    </span>
+                    </Pill>
                   </li>
                   <li className="flex items-center justify-between rounded-2xl border border-black/5 bg-white/80 px-4 py-3">
                     <span>List tasks</span>
-                    <span className="rounded-full bg-(--accent-soft) px-2 py-1 text-xs font-medium text-(--accent-strong)">
+                    <Pill variant="accent" size="sm">
                       GET /tasks
-                    </span>
+                    </Pill>
                   </li>
                   <li className="flex items-center justify-between rounded-2xl border border-black/5 bg-white/80 px-4 py-3">
                     <span>Delete task</span>
-                    <span className="rounded-full bg-(--accent-soft) px-2 py-1 text-xs font-medium text-(--accent-strong)">
+                    <Pill variant="accent" size="sm">
                       DELETE /tasks/:id
-                    </span>
+                    </Pill>
                   </li>
                   <li className="flex items-center justify-between rounded-2xl border border-black/5 bg-white/80 px-4 py-3">
                     <span>Daily briefing</span>
-                    <span className="rounded-full bg-(--accent-soft) px-2 py-1 text-xs font-medium text-(--accent-strong)">
+                    <Pill variant="accent" size="sm">
                       GET /tasks/summary
-                    </span>
+                    </Pill>
                   </li>
                 </ul>
               </div>

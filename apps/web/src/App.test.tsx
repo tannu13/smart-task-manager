@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
@@ -190,6 +190,13 @@ describe("App", () => {
     await userEvent.click(
       screen.getAllByRole("button", { name: /delete/i })[0],
     );
+    const dialog = screen.getByRole("dialog", { name: /delete this task/i });
+    expect(dialog).toBeVisible();
+    expect(
+      within(dialog).getByText(/finish frontend integration/i),
+    ).toBeVisible();
+
+    await userEvent.click(screen.getByRole("button", { name: /delete task/i }));
 
     await waitFor(() => {
       expect(
@@ -198,6 +205,65 @@ describe("App", () => {
     });
 
     expect(screen.getByText(/no briefing generated yet/i)).toBeVisible();
+  });
+
+  it("lets the user cancel task deletion", async () => {
+    const tasks = [
+      createTaskFixture({
+        id: "77777777-7777-4777-8777-777777777777",
+        title: "Keep this task",
+      }),
+    ];
+
+    useTaskApiHandlers(tasks);
+    renderApp();
+
+    expect(await screen.findByText("Keep this task")).toBeVisible();
+
+    await userEvent.click(screen.getByRole("button", { name: /delete/i }));
+    expect(
+      screen.getByRole("dialog", { name: /delete this task/i }),
+    ).toBeVisible();
+
+    await userEvent.click(screen.getByRole("button", { name: /cancel/i }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByText("Keep this task")).toBeVisible();
+  });
+
+  it("keeps keyboard focus trapped inside the delete confirmation modal", async () => {
+    const tasks = [
+      createTaskFixture({
+        id: "88888888-8888-4888-8888-888888888888",
+        title: "Trap focus here",
+      }),
+    ];
+
+    useTaskApiHandlers(tasks);
+    renderApp();
+
+    await screen.findByText("Trap focus here");
+
+    await userEvent.click(screen.getByRole("button", { name: /delete/i }));
+
+    const dialog = screen.getByRole("dialog", { name: /delete this task/i });
+    const cancelButton = within(dialog).getByRole("button", {
+      name: /cancel/i,
+    });
+    const confirmButton = within(dialog).getByRole("button", {
+      name: /delete task/i,
+    });
+
+    expect(cancelButton).toHaveFocus();
+
+    await userEvent.tab();
+    expect(confirmButton).toHaveFocus();
+
+    await userEvent.tab();
+    expect(cancelButton).toHaveFocus();
+
+    await userEvent.tab({ shift: true });
+    expect(confirmButton).toHaveFocus();
   });
 
   it("blocks blank task submission on the client", async () => {
